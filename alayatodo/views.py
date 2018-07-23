@@ -4,7 +4,8 @@ from flask import (
     redirect,
     render_template,
     request,
-    session
+    session,
+    jsonify
 )
 from .utils import clean_field
 from .constants import DONE, NOT_DONE
@@ -118,3 +119,32 @@ def todo_complete(id):
         g.db.commit()
 
     return redirect('/todo')
+
+
+@app.route('/todo/<id>/json', methods=['GET'])
+def todo_json(id):
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    cur = g.db.execute(
+        """
+            SELECT *
+            FROM todos
+            WHERE id ='%s'
+        """ % (id,)
+    )
+    todo = cur.fetchone()
+
+    data = {
+        'message': 'OK',
+        'status_code': 200,
+        'results': []
+    }
+
+    if not todo:
+        data['status_code'] = 404
+        data['message'] = 'Not Found'
+    else:
+        data['results'].append({key: todo[key] for key in todo.keys()})
+
+    return jsonify(data)
