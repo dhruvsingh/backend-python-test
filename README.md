@@ -33,6 +33,7 @@ Credentials:
 virtualenv .
 bin/pip install -r requirements.txt
 bin/python main.py initdb
+bin/python main.py migrate
 bin/python main.py
 ```
 

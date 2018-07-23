@@ -7,6 +7,7 @@ from flask import (
     session
 )
 from .utils import clean_field
+from .constants import DONE, NOT_DONE
 
 
 @app.route('/')
@@ -83,4 +84,37 @@ def todo_delete(id):
         return redirect('/login')
     g.db.execute("DELETE FROM todos WHERE id ='%s'" % id)
     g.db.commit()
+    return redirect('/todo')
+
+
+@app.route('/todo/complete/<id>', methods=['POST'])
+def todo_complete(id):
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    cur = g.db.execute(
+        """
+            SELECT `id`, `completed`
+            FROM todos
+            WHERE id ='%s' AND
+            user_id = '%s'
+        """ % (id, session['user']['id'])
+    )
+    todo = cur.fetchone()
+
+    # fail first approach
+    # TODO: use flag to not repeat code?
+    if not todo:
+        return redirect('/todo')
+
+    if todo['completed'] == NOT_DONE:
+        g.db.execute(
+            """
+                UPDATE todos
+                SET completed = '%s'
+                WHERE id ='%s'
+            """ % (DONE, id)
+        )
+        g.db.commit()
+
     return redirect('/todo')
