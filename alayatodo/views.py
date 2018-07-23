@@ -5,7 +5,8 @@ from flask import (
     render_template,
     request,
     session
-    )
+)
+from .utils import clean_field
 
 
 @app.route('/')
@@ -65,11 +66,14 @@ def todos():
 def todos_POST():
     if not session.get('logged_in'):
         return redirect('/login')
-    g.db.execute(
-        "INSERT INTO todos (user_id, description) VALUES ('%s', '%s')"
-        % (session['user']['id'], request.form.get('description', ''))
-    )
-    g.db.commit()
+
+    description = clean_field(request.form.get('description', ' '))
+    if description:
+        g.db.execute(
+            "INSERT INTO todos (user_id, description) VALUES ('%s', '%s')"
+            % (session['user']['id'], description)
+        )
+        g.db.commit()
     return redirect('/todo')
 
 
