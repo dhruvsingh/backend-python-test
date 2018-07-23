@@ -5,7 +5,8 @@ from flask import (
     render_template,
     request,
     session,
-    jsonify
+    jsonify,
+    flash
 )
 from .utils import clean_field
 from .constants import DONE, NOT_DONE
@@ -76,6 +77,7 @@ def todos_POST():
             % (session['user']['id'], description)
         )
         g.db.commit()
+        flash("Todo added succesfully.")
     return redirect('/todo')
 
 
@@ -85,6 +87,7 @@ def todo_delete(id):
         return redirect('/login')
     g.db.execute("DELETE FROM todos WHERE id ='%s'" % id)
     g.db.commit()
+    flash("Todo deleted succesfully.")
     return redirect('/todo')
 
 
@@ -95,7 +98,7 @@ def todo_complete(id):
 
     cur = g.db.execute(
         """
-            SELECT `id`, `completed`
+            SELECT `id`, `completed`, `description`
             FROM todos
             WHERE id ='%s' AND
             user_id = '%s'
@@ -106,6 +109,7 @@ def todo_complete(id):
     # fail first approach
     # TODO: use flag to not repeat code?
     if not todo:
+        flash("Todo not found")
         return redirect('/todo')
 
     if todo['completed'] == NOT_DONE:
@@ -117,6 +121,10 @@ def todo_complete(id):
             """ % (DONE, id)
         )
         g.db.commit()
+        message = "{todo_name}: marked as done.".format(
+            todo_name=todo['description']
+        )
+        flash(message)
 
     return redirect('/todo')
 
