@@ -5,7 +5,7 @@
     <h1>Todo List:</h1>
     <table class="table table-striped" id="todo_list">
         <thead>
-            <th>#</th>
+            <th>ID</th>
             <th>User</th>
             <th>Description</th>
             <th>Status</th>
@@ -15,7 +15,7 @@
             {% for todo in todos %}
                 <tr>
                     <td>{{ todo.id }}</td>
-                    <td>{{ todo.user_id }}</td>
+                    <td>{{ todo.user }}</td>
                     <td>
                         <a href="{{ url_for('todo', id=todo.id) }}">
                            {{ todo.description }}

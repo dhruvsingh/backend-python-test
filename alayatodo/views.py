@@ -1,6 +1,8 @@
-from alayatodo import app
+# -*- coding: utf-8 -*-
+"""app views."""
+from alayatodo import app, db
+from alayatodo.models import Todo, User
 from flask import (
-    g,
     redirect,
     render_template,
     request,
@@ -8,8 +10,8 @@ from flask import (
     jsonify,
     flash
 )
-from .utils import clean_field
-from .constants import DONE, NOT_DONE
+from alayatodo.utils import clean_field
+from alayatodo.constants import DONE, NOT_DONE
 
 
 @app.route('/')
@@ -28,15 +30,17 @@ def login():
 def login_POST():
     username = request.form.get('username')
     password = request.form.get('password')
+    user = User.query.filter_by(
+        username=username,
+        password=password
+    ).first()
 
-    sql = "SELECT * FROM users WHERE username = '%s' AND password = '%s'";
-    cur = g.db.execute(sql % (username, password))
-    user = cur.fetchone()
     if user:
-        session['user'] = dict(user)
+        session['user'] = {'username': user.username, 'id': user.id}
         session['logged_in'] = True
         return redirect('/todo')
 
+    flash("Invalid credentials!")
     return redirect('/login')
 
 
@@ -49,8 +53,12 @@ def logout():
 
 @app.route('/todo/<id>', methods=['GET'])
 def todo(id):
-    cur = g.db.execute("SELECT * FROM todos WHERE id ='%s'" % id)
-    todo = cur.fetchone()
+    todo = Todo.query.filter_by(id=id).first()
+
+    if not todo:
+        flash("Todo not found")
+        return redirect("/todo")
+
     return render_template('todo.html', todo=todo)
 
 
@@ -59,8 +67,8 @@ def todo(id):
 def todos():
     if not session.get('logged_in'):
         return redirect('/login')
-    cur = g.db.execute("SELECT * FROM todos WHERE user_id ='%s'" % session['user']['id'])
-    todos = cur.fetchall()
+
+    todos = Todo.query.filter_by(user=session['user']['id'])
     return render_template('todos.html', todos=todos)
 
 
@@ -71,13 +79,16 @@ def todos_POST():
         return redirect('/login')
 
     description = clean_field(request.form.get('description', ' '))
+
     if description:
-        g.db.execute(
-            "INSERT INTO todos (user_id, description) VALUES ('%s', '%s')"
-            % (session['user']['id'], description)
-        )
-        g.db.commit()
+        todo = Todo(session['user']['id'], description)
+        db.session.delete(todo)
+        db.session.commit()
+
         flash("Todo added succesfully.")
+    else:
+        flash("Description is required.")
+
     return redirect('/todo')
 
 
@@ -85,9 +96,17 @@ def todos_POST():
 def todo_delete(id):
     if not session.get('logged_in'):
         return redirect('/login')
-    g.db.execute("DELETE FROM todos WHERE id ='%s'" % id)
-    g.db.commit()
-    flash("Todo deleted succesfully.")
+
+    todo = Todo.query.filter_by(id=id).first()
+
+    if todo:
+        db.session.delete(todo)
+        db.session.commit()
+
+        flash("Todo deleted succesfully.")
+    else:
+        flash("Todo not found.")
+
     return redirect('/todo')
 
 
@@ -96,15 +115,10 @@ def todo_complete(id):
     if not session.get('logged_in'):
         return redirect('/login')
 
-    cur = g.db.execute(
-        """
-            SELECT `id`, `completed`, `description`
-            FROM todos
-            WHERE id ='%s' AND
-            user_id = '%s'
-        """ % (id, session['user']['id'])
-    )
-    todo = cur.fetchone()
+    todo = Todo.query.filter_by(
+        id=id,
+        user=session['user']['id']
+    ).first()
 
     # fail first approach
     # TODO: use flag to not repeat code?
@@ -112,17 +126,13 @@ def todo_complete(id):
         flash("Todo not found")
         return redirect('/todo')
 
-    if todo['completed'] == NOT_DONE:
-        g.db.execute(
-            """
-                UPDATE todos
-                SET completed = '%s'
-                WHERE id ='%s'
-            """ % (DONE, id)
-        )
-        g.db.commit()
+    if todo.completed == NOT_DONE:
+        todo.completed = DONE
+        db.session.add(todo)
+        db.session.commit()
+
         message = "{todo_name}: marked as done.".format(
-            todo_name=todo['description']
+            todo_name=todo.description
         )
         flash(message)
 
@@ -134,15 +144,7 @@ def todo_json(id):
     if not session.get('logged_in'):
         return redirect('/login')
 
-    cur = g.db.execute(
-        """
-            SELECT *
-            FROM todos
-            WHERE id ='%s'
-        """ % (id,)
-    )
-    todo = cur.fetchone()
-
+    todo = Todo.query.filter_by(id=id).first()
     data = {
         'message': 'OK',
         'status_code': 200,
