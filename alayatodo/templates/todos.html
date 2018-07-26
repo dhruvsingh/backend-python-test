@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="col-md-5 col-md-offset-4">
+<div class="col-md-6 col-md-offset-3">
     <h1>Todo List:</h1>
     <table class="table table-striped" id="todo_list">
         <thead>
@@ -30,23 +30,26 @@
                     </td>
                     <td>
                         <form method="post" action="{{ url_for('todo_delete', id=todo.id) }}">
-                            <button type="submit" class="btn btn-xs btn-danger"><span class="glyphicon glyphicon-remove glyphicon-white"></span></button>
+                            <button type="submit" class="btn btn-xs btn-danger" title="Delete todo">
+                                <span class="glyphicon glyphicon-remove glyphicon-white"></span>
+                            </button>
                         </form>
                     </td>
                 </tr>
             {% endfor %}
-            <tr>
-                <form method="post" action="{{ url_for('todos_POST') }}">
-                    <td colspan="4">
-                        <input type="textbox" name="description" class="small-6 small-center" placeholder="Description...">
-                    </td>
-                    <td>
-                        <button type="submit" class="btn btn-sm btn-primary">Add</button>
-                    </td>
-                    <td></td><td></td><td></td>
-                </form>
-            </tr>
         </tbody>
     </table>
+</div>
+<div class="col-md-6 col-md-offset-3 well">
+    <form method="post" class="form-inline" action="{{ url_for('todos_POST') }}">
+        <div class="form-row align-items-center">
+            <div class="form-group">
+                <input type="textbox" name="description" class="form-control" placeholder="Description..." required>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </div>
+    </form>
 </div>
 {% endblock %}
