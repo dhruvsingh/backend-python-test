@@ -3,13 +3,15 @@
 Usage:
   main.py [run]
   main.py initdb
-  main.py migrate
+  main.py dropdb
 """
 from docopt import docopt
 import subprocess
 import os
+import json
 
-from alayatodo import app
+from alayatodo import app, models
+from flask_fixtures import load_fixtures
 
 
 def _run_sql(filename):
@@ -26,15 +28,23 @@ def _run_sql(filename):
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    if args['initdb']:
-        _run_sql('resources/database.sql')
-        _run_sql('resources/fixtures.sql')
-        # migrate/update DB with latest changes.
-        _run_sql('resources/migrate.sql')
+
+    if args['dropdb']:
+        models.db.drop_all()
+        print "AlayaTodo: Database dropped."
+    elif args['initdb']:
+        # create db and all tables
+        models.db.create_all()
+        # initialize data for the created db
+        fixture_dir_path = os.path.join(os.getcwd(), 'fixtures')
+        # we know that no dirs are there in the fixtures path, so safe to
+        # iterate
+        for fixture in os.listdir(fixture_dir_path):
+            fixture_path = os.path.join(fixture_dir_path, fixture)
+            with open(fixture_path, 'r') as infile:
+                import pdb; pdb.set_trace()
+                load_fixtures(models.db, json.loads(infile.read()))
+
         print "AlayaTodo: Database initialized."
-    elif args['migrate']:
-        # in case only migration is changed and needs to be run
-        _run_sql('resources/migrate.sql')
-        print "AlayaTodo: Database migrated."
     else:
         app.run(use_reloader=True)
