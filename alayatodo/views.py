@@ -53,7 +53,10 @@ def logout():
 
 @app.route('/todo/<id>', methods=['GET'])
 def todo(id):
-    todo = Todo.query.filter_by(id=id).first()
+    todo = Todo.query.filter_by(
+        id=id,
+        user=session['user']['id']
+    ).first()
 
     if not todo:
         flash("Todo not found")
@@ -97,7 +100,10 @@ def todo_delete(id):
     if not session.get('logged_in'):
         return redirect('/login')
 
-    todo = Todo.query.filter_by(id=id).first()
+    todo = Todo.query.filter_by(
+        id=id,
+        user=session['user']['id']
+    ).first()
 
     if todo:
         db.session.delete(todo)
@@ -144,7 +150,10 @@ def todo_json(id):
     if not session.get('logged_in'):
         return redirect('/login')
 
-    todo = Todo.query.filter_by(id=id).first()
+    todo = Todo.query.filter_by(
+        id=id,
+        user=session['user']['id']
+    ).first()
     data = {
         'message': 'OK',
         'status_code': 200,
