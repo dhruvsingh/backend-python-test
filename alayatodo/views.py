@@ -85,7 +85,7 @@ def todos_POST():
 
     if description:
         todo = Todo(session['user']['id'], description)
-        db.session.delete(todo)
+        db.session.add(todo)
         db.session.commit()
 
         flash("Todo added succesfully.")

@@ -31,3 +31,8 @@ class Todo(db.Model):
     def __repr__(self):
         """__repr__ for Todo."""
         return '<User %r>' % self.user
+
+    def __init__(self, user, description):
+        """__init__ for Todo model."""
+        self.user = user
+        self.description = description

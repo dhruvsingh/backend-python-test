@@ -42,7 +42,6 @@ if __name__ == '__main__':
         for fixture in os.listdir(fixture_dir_path):
             fixture_path = os.path.join(fixture_dir_path, fixture)
             with open(fixture_path, 'r') as infile:
-                import pdb; pdb.set_trace()
                 load_fixtures(models.db, json.loads(infile.read()))
 
         print "AlayaTodo: Database initialized."
